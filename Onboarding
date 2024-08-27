@@ -1,0 +1,29 @@
+DetectiveCases
+| distinct EventType
+
+DetectiveCases
+| where EventType like 'CaseOpened'
+| take 100
+
+DetectiveCases
+| where EventType == 'CaseSolved'
+| summarize arg_min(Timestamp, DetectiveId) by CaseId
+| take 100
+
+let CaseIdToBounty =
+DetectiveCases
+| where EventType == 'CaseOpened'
+| extend Bounty = toreal(Properties.Bounty)
+| project CaseId, Bounty
+;    
+let FirstCaseSolver =
+DetectiveCases
+| where EventType == 'CaseSolved'
+| summarize arg_min(Timestamp, DetectiveId) by CaseId
+| project-rename FirstDetectiveSolver = DetectiveId
+;
+DetectiveCases
+| join kind=inner CaseIdToBounty on CaseId
+| join kind=inner FirstCaseSolver on CaseId
+| summarize TotalBountyByDetective = sum(Bounty) by FirstDetectiveSolver
+| top 1 by TotalBountyByDetective desc 
