@@ -1,0 +1,23 @@
+PhoneCalls
+| take 100
+
+let HiddenCalls =
+PhoneCalls
+| where EventType == 'Connect'
+| extend Origin = tostring(Properties.Origin)
+| extend Destination = tostring(Properties.Destination)
+| extend IsHidden = tobool(Properties.IsHidden)
+| project-away Properties
+| where IsHidden
+;
+let DisconnectedByDestination = 
+PhoneCalls
+| where EventType == 'Disconnect'
+| extend DisconnectedBy = tostring(Properties.DisconnectedBy)
+| project-away Properties
+| where DisconnectedBy == 'Destination'
+;
+HiddenCalls
+| join kind=inner DisconnectedByDestination on CallConnectionId
+| summarize dcount(Destination) by Origin
+| top 1 by dcount_Destination desc 
