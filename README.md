@@ -1,1 +1,1 @@
-# Kusto-Detective-Agenct-Season-2
+# Kusto-Detective-Agency-Season-2
