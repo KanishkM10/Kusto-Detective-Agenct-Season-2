@@ -1,0 +1,38 @@
+EXPLAIN
+SELECT SUM(Consumed * Cost) AS TotalCost
+FROM Costs
+JOIN Consumption ON Costs.MeterType = Consumption.MeterType
+
+Costs
+| join kind=inner 
+(Consumption
+| project-rename ['Consumption.MeterType']=MeterType) on ($left.MeterType == $right.['Consumption.MeterType'])
+| summarize TotalCost=sum(__sql_multiply(Consumed, Cost))
+| project TotalCost
+
+Consumption
+| take 100
+
+Costs
+| take 100
+
+Consumption
+| summarize RC = count() by Timestamp, HouseholdId
+| where RC > 1
+| take 100
+
+Consumption
+| summarize MinValue = min(Consumed), MaxValue = max(Consumed) by MeterType
+
+Costs
+| join kind=inner 
+(
+Consumption
+| distinct *
+| where Consumed > 0
+| project-rename ['Consumption.MeterType']=MeterType) on ($left.MeterType == $right.['Consumption.MeterType'])
+| summarize TotalCost=sum(__sql_multiply(Consumed, Cost))
+| project TotalCost
+
+//Initial = 35637875.19770531
+//Final = 35420883.0723976
